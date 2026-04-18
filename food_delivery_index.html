@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QuickBite — Business Analytics Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #faf7f2;
+  --surface: #ffffff;
+  --surface2: #f4f0e8;
+  --border: #e8e2d6;
+  --text: #1a1610;
+  --muted: #8a8070;
+  --orange: #f25c1e;
+  --orange-light: #fff0eb;
+  --green: #2a9d5c;
+  --green-light: #e8f7ef;
+  --red: #d94f3d;
+  --red-light: #fdf0ee;
+  --blue: #2563b0;
+  --blue-light: #eef3fc;
+  --yellow: #e8a020;
+  --yellow-light: #fdf6e8;
+  --shadow: 0 2px 16px rgba(26,22,16,0.07);
+  --shadow-lg: 0 8px 32px rgba(26,22,16,0.12);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Outfit', sans-serif;
+  font-size: 14px;
+  min-height: 100vh;
+}
+
+/* SIDEBAR */
+.layout { display: flex; min-height: 100vh; }
+.sidebar {
+  width: 220px;
+  background: var(--text);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  padding: 28px 0;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+.logo {
+  padding: 0 24px 28px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  margin-bottom: 20px;
+}
+.logo-name {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.4rem;
+  font-weight: 900;
+  color: var(--orange);
+  letter-spacing: -0.5px;
+}
+.logo-sub { font-size: 10px; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.1em; margin-top: 2px; }
+.nav-label { font-size: 10px; color: rgba(255,255,255,0.3); text-transform: uppercase; letter-spacing: 0.1em; padding: 0 24px; margin-bottom: 8px; margin-top: 16px; }
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 24px;
+  cursor: pointer;
+  font-size: 13px;
+  color: rgba(255,255,255,0.55);
+  transition: all 0.2s;
+  border-left: 3px solid transparent;
+}
+.nav-item:hover { color: #fff; background: rgba(255,255,255,0.05); }
+.nav-item.active { color: var(--orange); border-left-color: var(--orange); background: rgba(242,92,30,0.08); }
+.nav-icon { font-size: 15px; width: 18px; text-align: center; }
+.sidebar-footer {
+  margin-top: auto;
+  padding: 20px 24px;
+  border-top: 1px solid rgba(255,255,255,0.1);
+  font-size: 11px;
+  color: rgba(255,255,255,0.3);
+}
+.sidebar-footer strong { display: block; color: rgba(255,255,255,0.6); font-size: 12px; margin-bottom: 2px; }
+
+/* MAIN */
+.main { flex: 1; overflow: auto; }
+.topbar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 16px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  box-shadow: var(--shadow);
+}
+.topbar-left h2 { font-family: 'Playfair Display', serif; font-size: 1.3rem; font-weight: 700; }
+.topbar-left p { color: var(--muted); font-size: 12px; margin-top: 1px; }
+.topbar-right { display: flex; align-items: center; gap: 12px; }
+.period-select {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 7px 14px;
+  border-radius: 8px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 12px;
+  cursor: pointer;
+  outline: none;
+}
+.btn-export {
+  background: var(--orange);
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.btn-export:hover { opacity: 0.88; }
+
+.content { padding: 28px 32px; }
+
+/* KPI CARDS */
+.kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+.kpi-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: var(--shadow);
+  position: relative;
+  overflow: hidden;
+  animation: fadeUp 0.5s ease both;
+}
+.kpi-card:nth-child(1) { animation-delay: 0.05s; }
+.kpi-card:nth-child(2) { animation-delay: 0.1s; }
+.kpi-card:nth-child(3) { animation-delay: 0.15s; }
+.kpi-card:nth-child(4) { animation-delay: 0.2s; }
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.kpi-icon {
+  width: 38px; height: 38px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; margin-bottom: 14px;
+}
+.kpi-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 4px; }
+.kpi-val { font-family: 'Playfair Display', serif; font-size: 1.8rem; font-weight: 700; line-height: 1; }
+.kpi-footer { display: flex; align-items: center; gap: 6px; margin-top: 8px; font-size: 11px; }
+.kpi-badge { padding: 2px 7px; border-radius: 10px; font-weight: 600; font-size: 10px; }
+.up { color: var(--green); } .down { color: var(--red); }
+.badge-up { background: var(--green-light); color: var(--green); }
+.badge-down { background: var(--red-light); color: var(--red); }
+.kpi-period { color: var(--muted); }
+
+/* TWO-COL GRID */
+.row { display: grid; gap: 20px; margin-bottom: 20px; }
+.row-2 { grid-template-columns: 1.6fr 1fr; }
+.row-3 { grid-template-columns: 1fr 1fr 1fr; }
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 22px;
+  box-shadow: var(--shadow);
+  animation: fadeUp 0.5s ease both;
+  animation-delay: 0.25s;
+}
+.card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+.card-title { font-family: 'Playfair Display', serif; font-size: 1rem; font-weight: 700; }
+.card-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.pill { padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 500; }
+.pill-orange { background: var(--orange-light); color: var(--orange); }
+.pill-green  { background: var(--green-light);  color: var(--green);  }
+.pill-blue   { background: var(--blue-light);   color: var(--blue);   }
+
+/* REVENUE CHART */
+.rev-chart { height: 160px; display: flex; align-items: flex-end; gap: 6px; padding-bottom: 24px; position: relative; }
+.rev-chart::after { content: ''; position: absolute; bottom: 24px; left: 0; right: 0; height: 1px; background: var(--border); }
+.rev-col { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; position: relative; }
+.rev-bar {
+  width: 100%; border-radius: 6px 6px 0 0;
+  background: var(--orange);
+  transition: height 1s cubic-bezier(0.4,0,0.2,1);
+  position: relative; cursor: pointer;
+}
+.rev-bar.target {
+  background: repeating-linear-gradient(45deg, var(--orange-light), var(--orange-light) 3px, #fde0d4 3px, #fde0d4 6px);
+  border: 1.5px dashed var(--orange);
+}
+.rev-bar:hover { filter: brightness(0.92); }
+.rev-bar::before {
+  content: attr(data-tip);
+  position: absolute; top: -26px; left: 50%; transform: translateX(-50%);
+  background: var(--text); color: #fff;
+  padding: 2px 7px; border-radius: 5px; font-size: 10px; white-space: nowrap;
+  opacity: 0; pointer-events: none; transition: opacity 0.2s;
+}
+.rev-bar:hover::before { opacity: 1; }
+.rev-label { position: absolute; bottom: 6px; font-size: 9px; color: var(--muted); }
+
+/* CITY TABLE */
+.city-table { width: 100%; border-collapse: collapse; }
+.city-table th { text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); padding: 6px 10px; border-bottom: 1px solid var(--border); }
+.city-table td { padding: 10px 10px; border-bottom: 1px solid rgba(232,226,214,0.5); font-size: 12px; vertical-align: middle; }
+.city-table tr:last-child td { border-bottom: none; }
+.city-table tr:hover td { background: var(--surface2); }
+.city-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 7px; vertical-align: middle; }
+.mini-bar-wrap { height: 5px; background: var(--surface2); border-radius: 3px; overflow: hidden; margin-top: 4px; }
+.mini-bar { height: 100%; border-radius: 3px; background: var(--orange); }
+.rank { font-family: 'Playfair Display', serif; font-weight: 700; color: var(--muted); }
+
+/* CATEGORY DONUT */
+.donut-section { display: flex; align-items: center; justify-content: center; gap: 24px; }
+svg.donut { transform: rotate(-90deg); }
+.donut-legend { display: flex; flex-direction: column; gap: 9px; }
+.leg-row { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+.leg-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+.leg-name { flex: 1; }
+.leg-pct { font-weight: 600; color: var(--text); }
+
+/* PARTNER CARDS */
+.partner-list { display: flex; flex-direction: column; gap: 10px; }
+.partner-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px; border-radius: 12px;
+  background: var(--surface2); transition: background 0.2s;
+}
+.partner-row:hover { background: var(--border); }
+.partner-emoji { font-size: 22px; width: 38px; height: 38px; background: #fff; border-radius: 10px; display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow); }
+.partner-name { font-weight: 600; font-size: 13px; }
+.partner-type { font-size: 11px; color: var(--muted); }
+.partner-rev { font-family: 'Playfair Display', serif; font-size: 1rem; font-weight: 700; margin-left: auto; }
+.partner-growth { font-size: 11px; text-align: right; }
+
+/* ORDER FLOW */
+.flow-wrap { display: flex; align-items: center; gap: 0; }
+.flow-step { flex: 1; text-align: center; }
+.flow-circle {
+  width: 44px; height: 44px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; margin: 0 auto 8px;
+  border: 2px solid var(--border);
+  background: var(--surface2);
+  position: relative; z-index: 1;
+}
+.flow-circle.done { background: var(--green-light); border-color: var(--green); }
+.flow-circle.active { background: var(--orange-light); border-color: var(--orange); }
+.flow-label { font-size: 11px; color: var(--muted); }
+.flow-count { font-size: 14px; font-weight: 600; color: var(--text); }
+.flow-arrow { color: var(--border); font-size: 18px; flex-shrink: 0; margin-bottom: 22px; }
+
+/* GROWTH INSIGHT */
+.insight-list { display: flex; flex-direction: column; gap: 10px; }
+.insight-item {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 12px 14px; border-radius: 12px;
+  border-left: 3px solid transparent;
+}
+.insight-item.good  { background: var(--green-light);  border-color: var(--green);  }
+.insight-item.warn  { background: var(--yellow-light); border-color: var(--yellow); }
+.insight-item.info  { background: var(--blue-light);   border-color: var(--blue);   }
+.insight-icon { font-size: 16px; margin-top: 1px; }
+.insight-title { font-size: 12px; font-weight: 600; margin-bottom: 2px; }
+.insight-desc { font-size: 11px; color: var(--muted); line-height: 1.5; }
+
+/* HEATMAP */
+.heatmap-wrap { display: flex; flex-direction: column; gap: 5px; }
+.heatmap-row { display: flex; gap: 4px; align-items: center; }
+.heatmap-label { font-size: 10px; color: var(--muted); width: 28px; flex-shrink: 0; }
+.hm-cell { flex: 1; height: 22px; border-radius: 4px; cursor: pointer; transition: opacity 0.2s; }
+.hm-cell:hover { opacity: 0.75; }
+.heatmap-hours { display: flex; gap: 4px; padding-left: 32px; margin-bottom: 4px; }
+.heatmap-hours span { flex: 1; font-size: 9px; color: var(--muted); text-align: center; }
+
+@media (max-width: 900px) {
+  .sidebar { display: none; }
+  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+  .row-2, .row-3 { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="layout">
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="logo">
+    <div class="logo-name">🍔 QuickBite</div>
+    <div class="logo-sub">Business Intelligence</div>
+  </div>
+  <div class="nav-label">Overview</div>
+  <div class="nav-item active"><span class="nav-icon">📊</span> Dashboard</div>
+  <div class="nav-item"><span class="nav-icon">📦</span> Orders</div>
+  <div class="nav-item"><span class="nav-icon">🏪</span> Restaurants</div>
+  <div class="nav-label">Growth</div>
+  <div class="nav-item"><span class="nav-icon">🗺️</span> Markets</div>
+  <div class="nav-item"><span class="nav-icon">👥</span> Customers</div>
+  <div class="nav-item"><span class="nav-icon">📣</span> Campaigns</div>
+  <div class="nav-label">Finance</div>
+  <div class="nav-item"><span class="nav-icon">💰</span> Revenue</div>
+  <div class="nav-item"><span class="nav-icon">🤝</span> Partnerships</div>
+  <div class="sidebar-footer">
+    <strong>Kavyanjali Priya</strong>
+    Business Dev Associate
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-left">
+      <h2>Business Overview</h2>
+      <p>QuickBite Food Delivery — Growth & Revenue Analytics</p>
+    </div>
+    <div class="topbar-right">
+      <select class="period-select" onchange="changePeriod(this.value)">
+        <option value="q1">Q1 2024</option>
+        <option value="q2">Q2 2024</option>
+        <option value="q3" selected>Q3 2024</option>
+        <option value="q4">Q4 2024</option>
+      </select>
+      <button class="btn-export" onclick="alert('Exporting report...')">⬇ Export Report</button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- KPI CARDS -->
+    <div class="kpi-grid" id="kpiGrid"></div>
+
+    <!-- ROW 1: Revenue Chart + City Breakdown -->
+    <div class="row row-2">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Monthly Revenue</div>
+            <div class="card-sub">Actual vs Target (₹ Lakhs)</div>
+          </div>
+          <span class="pill pill-orange">Q3 2024</span>
+        </div>
+        <div class="rev-chart" id="revChart"></div>
+        <div style="display:flex;gap:16px;margin-top:8px;">
+          <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted)">
+            <span style="width:12px;height:12px;border-radius:3px;background:var(--orange);display:inline-block"></span> Actual
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted)">
+            <span style="width:12px;height:12px;border-radius:3px;border:1.5px dashed var(--orange);display:inline-block"></span> Target
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Top Cities</div>
+            <div class="card-sub">Revenue contribution</div>
+          </div>
+          <span class="pill pill-blue">Live</span>
+        </div>
+        <table class="city-table" id="cityTable"></table>
+      </div>
+    </div>
+
+    <!-- ROW 2: Category + Partners + Order Flow -->
+    <div class="row row-3">
+      <div class="card">
+        <div class="card-header">
+          <div><div class="card-title">Category Mix</div><div class="card-sub">Orders by cuisine</div></div>
+        </div>
+        <div class="donut-section" id="donutSection"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div><div class="card-title">Top Partners</div><div class="card-sub">Restaurant revenue</div></div>
+          <span class="pill pill-green">Q3</span>
+        </div>
+        <div class="partner-list" id="partnerList"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div><div class="card-title">Order Flow</div><div class="card-sub">Fulfilment pipeline</div></div>
+        </div>
+        <div class="flow-wrap" id="orderFlow"></div>
+        <div style="margin-top:18px;">
+          <div style="font-size:11px;color:var(--muted);margin-bottom:6px">Fulfilment Rate</div>
+          <div style="background:var(--surface2);border-radius:6px;height:8px;overflow:hidden">
+            <div style="height:100%;width:94%;background:var(--green);border-radius:6px;transition:width 1s"></div>
+          </div>
+          <div style="font-size:11px;color:var(--green);margin-top:4px;font-weight:600">94% ✓ Above Target</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ROW 3: Heatmap + Insights -->
+    <div class="row row-2">
+      <div class="card">
+        <div class="card-header">
+          <div><div class="card-title">Order Heatmap</div><div class="card-sub">Demand by day & hour</div></div>
+          <span class="pill pill-orange">This Week</span>
+        </div>
+        <div id="heatmapSection"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div><div class="card-title">Growth Insights</div><div class="card-sub">AI-powered recommendations</div></div>
+        </div>
+        <div class="insight-list" id="insightList"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────
+const DATA = {
+  q3: {
+    kpis: [
+      { icon:"💰", label:"Total Revenue",    val:"₹48.6L",  change:"+22%", up:true,  period:"vs Q2 2024", bg:"#fff0eb", ic:"var(--orange)" },
+      { icon:"📦", label:"Total Orders",     val:"1,24,300",change:"+18%", up:true,  period:"vs Q2 2024", bg:"#e8f7ef", ic:"var(--green)"  },
+      { icon:"🏪", label:"Active Partners",  val:"342",     change:"+31",  up:true,  period:"new this qtr",bg:"#eef3fc",ic:"var(--blue)"   },
+      { icon:"⭐", label:"Avg Rating",       val:"4.6",     change:"-0.1", up:false, period:"vs Q2 2024", bg:"#fdf6e8", ic:"var(--yellow)" },
+    ],
+    revenue: {
+      months: ["Jul","Aug","Sep"],
+      actual: [14.2, 16.8, 17.6],
+      target: [13.0, 15.5, 18.0],
+    },
+    cities: [
+      { name:"Hyderabad", color:"#f25c1e", rev:"₹12.4L", pct:26 },
+      { name:"Bangalore",  color:"#2563b0", rev:"₹10.1L", pct:21 },
+      { name:"Mumbai",     color:"#2a9d5c", rev:"₹9.8L",  pct:20 },
+      { name:"Chennai",    color:"#e8a020", rev:"₹7.2L",  pct:15 },
+      { name:"Pune",       color:"#c05fd4", rev:"₹5.6L",  pct:12 },
+    ],
+    categories: [
+      { name:"Biryani & Rice", pct:28, color:"#f25c1e" },
+      { name:"Fast Food",      pct:22, color:"#2563b0" },
+      { name:"South Indian",   pct:18, color:"#2a9d5c" },
+      { name:"Chinese",        pct:16, color:"#e8a020" },
+      { name:"Desserts",       pct:16, color:"#c05fd4" },
+    ],
+    partners: [
+      { emoji:"🍗", name:"Paradise Biryani", type:"Hyderabadi",  rev:"₹4.2L", growth:"+28%", up:true },
+      { emoji:"🍕", name:"Domino's",         type:"Fast Food",   rev:"₹3.8L", growth:"+12%", up:true },
+      { emoji:"🥘", name:"Saravana Bhavan",  type:"South Indian",rev:"₹2.9L", growth:"+9%",  up:true },
+      { emoji:"🍜", name:"Mainland China",   type:"Chinese",     rev:"₹2.1L", growth:"-3%",  up:false },
+    ],
+    flow: [
+      { icon:"📱", label:"Placed",    count:"1,24,300", done:true },
+      { icon:"✅", label:"Confirmed", count:"1,21,200", done:true },
+      { icon:"👨‍🍳", label:"Preparing", count:"1,18,600", active:true },
+      { icon:"🛵", label:"Dispatched",count:"1,16,800", done:false },
+      { icon:"🏠", label:"Delivered", count:"1,16,800", done:false },
+    ],
+    insights: [
+      { type:"good", icon:"🚀", title:"Biryani demand up 28% in Hyderabad", desc:"Opportunity to onboard 15+ more biryani partners in Secunderabad and HITEC City zones." },
+      { type:"warn", icon:"⚠️", title:"Lunch hour gap: 12–2PM Pune", desc:"Only 38 active delivery partners during peak lunch. Recommend surge incentive to recruit 20 more." },
+      { type:"info", icon:"💡", title:"Corporate tie-up potential", desc:"3 IT parks in Whitefield, Bangalore have no exclusive deal. Estimated ₹8L/month opportunity." },
+      { type:"good", icon:"📈", title:"Weekend orders up 41%", desc:"Introduce weekend combo campaigns with top 10 partners to maximise Saturday–Sunday revenue." },
+    ],
+  }
+};
+
+const DAYS  = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+const HOURS = ["8","10","12","14","16","18","20","22"];
+const HEATMAP = [
+  [10,20,60,80,40,30,70,50],
+  [15,25,70,85,45,35,75,55],
+  [12,22,65,90,50,40,80,60],
+  [18,30,75,88,55,45,85,65],
+  [20,35,85,95,60,50,90,70],
+  [30,50,70,75,80,85,95,88],
+  [25,45,55,60,75,88,100,80],
+];
+
+function heatColor(v) {
+  const t = v / 100;
+  const r = Math.round(242 + (255-242)*0); // orange to deep orange
+  if (t < 0.25) return `rgba(242,92,30,${0.1 + t*0.6})`;
+  if (t < 0.5)  return `rgba(242,92,30,${0.25 + t*0.5})`;
+  if (t < 0.75) return `rgba(242,92,30,${0.5 + t*0.3})`;
+  return `rgba(242,92,30,${0.7 + t*0.3})`;
+}
+
+function render(period) {
+  const d = DATA[period] || DATA.q3;
+
+  // KPIs
+  document.getElementById('kpiGrid').innerHTML = d.kpis.map(k => `
+    <div class="kpi-card">
+      <div class="kpi-icon" style="background:${k.bg};color:${k.ic}">${k.icon}</div>
+      <div class="kpi-label">${k.label}</div>
+      <div class="kpi-val">${k.val}</div>
+      <div class="kpi-footer">
+        <span class="kpi-badge ${k.up?'badge-up':'badge-down'}">${k.change}</span>
+        <span class="kpi-period">${k.period}</span>
+      </div>
+    </div>`).join('');
+
+  // Revenue chart
+  const rev = d.revenue;
+  const maxR = Math.max(...rev.actual, ...rev.target);
+  document.getElementById('revChart').innerHTML =
+    rev.months.map((m,i) => `
+      <div class="rev-col">
+        <div class="rev-bar" style="height:${Math.round(rev.actual[i]/maxR*100)}%" data-tip="₹${rev.actual[i]}L"></div>
+        <div class="rev-label">${m}</div>
+      </div>
+      <div class="rev-col">
+        <div class="rev-bar target" style="height:${Math.round(rev.target[i]/maxR*100)}%" data-tip="Target ₹${rev.target[i]}L"></div>
+        <div class="rev-label" style="opacity:0">${m}</div>
+      </div>
+    `).join('');
+
+  // City table
+  document.getElementById('cityTable').innerHTML =
+    `<tr><th>#</th><th>City</th><th>Revenue</th><th>Share</th></tr>` +
+    d.cities.map((c,i) => `
+      <tr>
+        <td class="rank">${i+1}</td>
+        <td><span class="city-dot" style="background:${c.color}"></span>${c.name}</td>
+        <td style="font-weight:600">${c.rev}</td>
+        <td style="min-width:80px">
+          <div style="font-size:11px;color:var(--muted)">${c.pct}%</div>
+          <div class="mini-bar-wrap"><div class="mini-bar" style="width:${c.pct*3.5}%;background:${c.color}"></div></div>
+        </td>
+      </tr>`).join('');
+
+  // Donut
+  const total = 100, r = 48, cx = 60, cy = 60;
+  let offset = 0;
+  const circles = d.categories.map(cat => {
+    const dash = (cat.pct / 100) * (2 * Math.PI * r);
+    const gap  = (2 * Math.PI * r) - dash;
+    const el = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${cat.color}" stroke-width="16"
+      stroke-dasharray="${dash} ${gap}" stroke-dashoffset="${-offset}" />`;
+    offset += dash;
+    return el;
+  });
+  document.getElementById('donutSection').innerHTML = `
+    <svg class="donut" width="120" height="120" viewBox="0 0 120 120">
+      <circle cx="60" cy="60" r="48" fill="none" stroke="var(--surface2)" stroke-width="16"/>
+      ${circles.join('')}
+    </svg>
+    <div class="donut-legend">
+      ${d.categories.map(c=>`
+        <div class="leg-row">
+          <span class="leg-dot" style="background:${c.color}"></span>
+          <span class="leg-name">${c.name}</span>
+          <span class="leg-pct">${c.pct}%</span>
+        </div>`).join('')}
+    </div>`;
+
+  // Partners
+  document.getElementById('partnerList').innerHTML = d.partners.map(p=>`
+    <div class="partner-row">
+      <div class="partner-emoji">${p.emoji}</div>
+      <div>
+        <div class="partner-name">${p.name}</div>
+        <div class="partner-type">${p.type}</div>
+      </div>
+      <div>
+        <div class="partner-rev">${p.rev}</div>
+        <div class="partner-growth ${p.up?'up':'down'}">${p.growth}</div>
+      </div>
+    </div>`).join('');
+
+  // Order flow
+  document.getElementById('orderFlow').innerHTML = d.flow.map((f,i)=>`
+    ${i>0?`<div class="flow-arrow">›</div>`:''}
+    <div class="flow-step">
+      <div class="flow-circle ${f.done?'done':f.active?'active':''}">${f.icon}</div>
+      <div class="flow-count">${f.count.split(',')[0]}k</div>
+      <div class="flow-label">${f.label}</div>
+    </div>`).join('');
+
+  // Heatmap
+  document.getElementById('heatmapSection').innerHTML = `
+    <div class="heatmap-hours">${HOURS.map(h=>`<span>${h}h</span>`).join('')}</div>
+    <div class="heatmap-wrap">
+      ${DAYS.map((day,di)=>`
+        <div class="heatmap-row">
+          <span class="heatmap-label">${day}</span>
+          ${HEATMAP[di].map(v=>`
+            <div class="hm-cell" style="background:${heatColor(v)}" title="${day} ${HOURS[HEATMAP[di].indexOf(v)]}h: ${v} orders/min"></div>
+          `).join('')}
+        </div>`).join('')}
+    </div>`;
+
+  // Insights
+  document.getElementById('insightList').innerHTML = d.insights.map(ins=>`
+    <div class="insight-item ${ins.type}">
+      <span class="insight-icon">${ins.icon}</span>
+      <div>
+        <div class="insight-title">${ins.title}</div>
+        <div class="insight-desc">${ins.desc}</div>
+      </div>
+    </div>`).join('');
+}
+
+function changePeriod(val) { render(val); }
+render('q3');
+</script>
+</body>
+</html>
