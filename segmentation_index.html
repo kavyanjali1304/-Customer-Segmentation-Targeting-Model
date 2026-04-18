@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Customer Segmentation & Targeting Model</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Epilogue:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #07080f;
+  --surface: #0e1018;
+  --surface2: #151720;
+  --border: #1e2130;
+  --text: #ecedf5;
+  --muted: #6b6f85;
+  --s1: #00d4aa;   /* Champions - teal */
+  --s2: #6c8fff;   /* Loyalists - blue */
+  --s3: #ffb547;   /* Potentials - amber */
+  --s4: #ff6b9d;   /* At Risk - pink */
+  --s5: #a78bfa;   /* Hibernating - violet */
+  --s1bg: rgba(0,212,170,0.08);
+  --s2bg: rgba(108,143,255,0.08);
+  --s3bg: rgba(255,181,71,0.08);
+  --s4bg: rgba(255,107,157,0.08);
+  --s5bg: rgba(167,139,250,0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Epilogue', sans-serif;
+  font-size: 14px;
+  min-height: 100vh;
+}
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background:
+    radial-gradient(ellipse at 10% 10%, rgba(0,212,170,0.04) 0%, transparent 50%),
+    radial-gradient(ellipse at 90% 80%, rgba(108,143,255,0.04) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+.app { max-width: 1200px; margin: 0 auto; padding: 36px 24px; position: relative; }
+
+/* ── HEADER ── */
+.header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 36px; flex-wrap: wrap; gap: 16px; }
+.header-left h1 {
+  font-family: 'Syne', sans-serif;
+  font-size: 2rem; font-weight: 800;
+  letter-spacing: -0.5px; line-height: 1.1;
+}
+.header-left h1 em { color: var(--s1); font-style: normal; }
+.header-left p { color: var(--muted); font-size: 13px; margin-top: 6px; }
+.header-badges { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.hbadge {
+  padding: 5px 13px; border-radius: 20px;
+  font-size: 11px; font-weight: 500;
+  font-family: 'Syne', sans-serif;
+}
+.hbadge-teal  { background: var(--s1bg); color: var(--s1); border: 1px solid rgba(0,212,170,0.2); }
+.hbadge-blue  { background: var(--s2bg); color: var(--s2); border: 1px solid rgba(108,143,255,0.2); }
+
+/* ── SEGMENT TABS ── */
+.seg-tabs { display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap; }
+.seg-tab {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 18px; border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  cursor: pointer; font-family: 'Syne', sans-serif;
+  font-size: 12px; font-weight: 600;
+  transition: all 0.2s; color: var(--muted);
+}
+.seg-tab:hover { border-color: var(--muted); color: var(--text); }
+.seg-tab.active { color: var(--text); }
+.seg-tab .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.seg-tab .count { font-size: 10px; opacity: 0.7; }
+
+/* ── KPI ROW ── */
+.kpi-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 24px; }
+.kpi {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 14px; padding: 16px;
+  animation: fadeUp 0.4s ease both;
+  cursor: pointer; transition: border-color 0.2s;
+}
+.kpi:hover { border-color: var(--muted); }
+.kpi.selected { border-color: var(--s1) !important; }
+.kpi-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+.kpi-icon { font-size: 18px; }
+.kpi-change { font-size: 10px; padding: 2px 7px; border-radius: 8px; font-weight: 600; }
+.up { color: var(--s1); background: var(--s1bg); }
+.down { color: var(--s4); background: var(--s4bg); }
+.kpi-val { font-family: 'Syne', sans-serif; font-size: 1.5rem; font-weight: 800; line-height: 1; margin-bottom: 4px; }
+.kpi-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── GRID ── */
+.grid-2 { display: grid; grid-template-columns: 1.2fr 1fr; gap: 20px; margin-bottom: 20px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+.card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 18px; padding: 22px;
+  animation: fadeUp 0.5s ease both;
+}
+.card-span2 { grid-column: span 2; }
+.card-title {
+  font-family: 'Syne', sans-serif; font-size: 13px;
+  font-weight: 700; margin-bottom: 4px;
+}
+.card-sub { font-size: 11px; color: var(--muted); margin-bottom: 18px; }
+
+/* ── SCATTER PLOT ── */
+#scatterCanvas { width: 100%; cursor: crosshair; border-radius: 10px; display: block; }
+.scatter-legend { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+.scatter-leg-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--muted); }
+.scatter-leg-dot { width: 9px; height: 9px; border-radius: 50%; }
+
+/* ── SEGMENT CARDS ── */
+.seg-cards { display: flex; flex-direction: column; gap: 10px; }
+.seg-card {
+  border-radius: 12px; padding: 14px 16px;
+  border: 1px solid transparent;
+  cursor: pointer; transition: all 0.2s;
+  display: flex; align-items: center; gap: 14px;
+}
+.seg-card:hover { transform: translateX(4px); }
+.seg-card-icon { font-size: 22px; width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.seg-card-name { font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700; }
+.seg-card-desc { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.seg-card-right { margin-left: auto; text-align: right; }
+.seg-card-count { font-family: 'Syne', sans-serif; font-size: 1.1rem; font-weight: 800; }
+.seg-card-pct { font-size: 10px; color: var(--muted); }
+
+/* ── RFM BARS ── */
+.rfm-wrap { display: flex; flex-direction: column; gap: 14px; }
+.rfm-row { display: flex; flex-direction: column; gap: 4px; }
+.rfm-label { display: flex; justify-content: space-between; font-size: 11px; }
+.rfm-name { color: var(--muted); }
+.rfm-val { font-weight: 600; color: var(--text); }
+.rfm-track { height: 8px; background: var(--surface2); border-radius: 4px; overflow: hidden; }
+.rfm-fill { height: 100%; border-radius: 4px; transition: width 1s cubic-bezier(0.4,0,0.2,1); }
+
+/* ── TARGETING STRATEGIES ── */
+.strat-list { display: flex; flex-direction: column; gap: 10px; }
+.strat-item {
+  border-radius: 12px; padding: 14px;
+  border-left: 3px solid transparent;
+}
+.strat-header { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.strat-seg { font-size: 10px; padding: 2px 8px; border-radius: 8px; font-weight: 600; }
+.strat-title { font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 700; }
+.strat-desc { font-size: 11px; color: var(--muted); line-height: 1.5; }
+.strat-roi { font-size: 11px; margin-top: 6px; font-weight: 600; }
+
+/* ── CUSTOMER TABLE ── */
+.cust-table { width: 100%; border-collapse: collapse; }
+.cust-table th { font-size: 10px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); padding: 8px 12px; border-bottom: 1px solid var(--border); text-align: left; }
+.cust-table td { padding: 10px 12px; border-bottom: 1px solid rgba(30,33,48,0.7); font-size: 12px; vertical-align: middle; }
+.cust-table tr:last-child td { border-bottom: none; }
+.cust-table tr:hover td { background: var(--surface2); }
+.seg-pill { padding: 3px 10px; border-radius: 10px; font-size: 10px; font-weight: 600; font-family: 'Syne', sans-serif; }
+.score-bar { display: flex; gap: 2px; }
+.score-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border); }
+.score-dot.filled { background: var(--s1); }
+
+/* ── ADD CUSTOMER ── */
+.form-grid { display: grid; grid-template-columns: repeat(4, 1fr) auto; gap: 10px; align-items: end; }
+.fg label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; display: block; margin-bottom: 5px; }
+.fg input, .fg select {
+  width: 100%; background: var(--surface2); border: 1px solid var(--border);
+  color: var(--text); padding: 9px 12px; border-radius: 10px;
+  font-family: 'Epilogue', sans-serif; font-size: 12px; outline: none;
+  transition: border-color 0.2s;
+}
+.fg input:focus, .fg select:focus { border-color: var(--s1); }
+.fg select option { background: var(--surface2); }
+.btn-seg {
+  background: var(--s1); color: var(--bg);
+  border: none; padding: 9px 20px; border-radius: 10px;
+  font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 700;
+  cursor: pointer; white-space: nowrap; transition: opacity 0.2s;
+}
+.btn-seg:hover { opacity: 0.85; }
+
+/* ── TOOLTIP ── */
+.tooltip {
+  position: fixed; background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 10px; padding: 10px 14px; font-size: 11px;
+  pointer-events: none; z-index: 100; display: none;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+}
+.tooltip-name { font-family: 'Syne', sans-serif; font-weight: 700; margin-bottom: 4px; }
+.tooltip-row { display: flex; justify-content: space-between; gap: 16px; color: var(--muted); }
+.tooltip-val { color: var(--text); font-weight: 600; }
+
+@media (max-width: 800px) {
+  .kpi-row { grid-template-columns: repeat(3, 1fr); }
+  .grid-2, .grid-3 { grid-template-columns: 1fr; }
+  .form-grid { grid-template-columns: 1fr 1fr; }
+  .form-grid .btn-seg { grid-column: 1 / -1; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-left">
+      <h1>Customer <em>Segmentation</em><br>& Targeting Model</h1>
+      <p>K-Means clustering · RFM Analysis · Targeted outreach strategies</p>
+    </div>
+    <div class="header-badges">
+      <span class="hbadge hbadge-teal">📊 K-Means (K=5)</span>
+      <span class="hbadge hbadge-blue">🎯 RFM Scoring</span>
+    </div>
+  </div>
+
+  <!-- SEGMENT TABS -->
+  <div class="seg-tabs" id="segTabs"></div>
+
+  <!-- KPI ROW -->
+  <div class="kpi-row" id="kpiRow"></div>
+
+  <!-- ROW 1: Scatter + Segments -->
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Customer Cluster Map</div>
+      <div class="card-sub">Spend vs Frequency — K-Means Clustering (hover to inspect)</div>
+      <canvas id="scatterCanvas" height="260"></canvas>
+      <div class="scatter-legend" id="scatterLegend"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Segment Breakdown</div>
+      <div class="card-sub">5 clusters · 500 customers</div>
+      <div class="seg-cards" id="segCards"></div>
+    </div>
+  </div>
+
+  <!-- ROW 2: RFM + Strategies -->
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">RFM Score by Segment</div>
+      <div class="card-sub">Recency · Frequency · Monetary value (avg per segment)</div>
+      <div class="rfm-wrap" id="rfmWrap"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Targeting Strategies</div>
+      <div class="card-sub">Data-backed campaign recommendations per segment</div>
+      <div class="strat-list" id="stratList"></div>
+    </div>
+  </div>
+
+  <!-- ROW 3: Customer Table -->
+  <div class="card" style="margin-bottom:20px">
+    <div class="card-title">Customer Directory</div>
+    <div class="card-sub">Individual profiles with segment assignment & scores</div>
+    <div style="overflow-x:auto">
+      <table class="cust-table" id="custTable"></table>
+    </div>
+  </div>
+
+  <!-- ADD CUSTOMER -->
+  <div class="card">
+    <div class="card-title">Add New Customer</div>
+    <div class="card-sub" style="margin-bottom:14px">Enter customer data to auto-classify into a segment</div>
+    <div class="form-grid">
+      <div class="fg"><label>Customer Name</label><input id="cName" placeholder="e.g. Priya Sharma" /></div>
+      <div class="fg"><label>Avg Monthly Spend (₹)</label><input id="cSpend" type="number" placeholder="e.g. 4500" /></div>
+      <div class="fg"><label>Orders / Month</label><input id="cFreq" type="number" placeholder="e.g. 8" /></div>
+      <div class="fg"><label>Days Since Last Order</label><input id="cRecency" type="number" placeholder="e.g. 12" /></div>
+      <button class="btn-seg" onclick="addCustomer()">⚡ Classify</button>
+    </div>
+    <div id="classifyResult" style="margin-top:14px;font-size:12px;display:none"></div>
+  </div>
+
+</div>
+
+<div class="tooltip" id="tooltip">
+  <div class="tooltip-name" id="ttName"></div>
+  <div class="tooltip-row"><span>Spend</span><span class="tooltip-val" id="ttSpend"></span></div>
+  <div class="tooltip-row"><span>Frequency</span><span class="tooltip-val" id="ttFreq"></span></div>
+  <div class="tooltip-row"><span>Segment</span><span class="tooltip-val" id="ttSeg"></span></div>
+</div>
+
+<script>
+// ── SEGMENTS ──────────────────────────────────────────
+const SEGMENTS = [
+  {
+    id:0, name:"Champions",   icon:"👑", color:"var(--s1)", bg:"var(--s1bg)", border:"rgba(0,212,170,0.25)",
+    count:92, desc:"High spend, frequent buyers",
+    rfm:{ r:9.2, f:9.5, m:9.8 },
+    strategy:"VIP loyalty rewards + early access to new products. Offer exclusive referral bonuses.",
+    roi:"Expected ROI: +38% revenue from upsell",
+    spendRange:[4000,8000], freqRange:[10,20], recencyRange:[1,7]
+  },
+  {
+    id:1, name:"Loyalists",   icon:"💎", color:"var(--s2)", bg:"var(--s2bg)", border:"rgba(108,143,255,0.25)",
+    count:138, desc:"Consistent buyers, moderate spend",
+    rfm:{ r:7.5, f:7.8, m:7.2 },
+    strategy:"Subscription plans + bundle offers. Send personalised 'Thank You' discounts monthly.",
+    roi:"Expected ROI: +22% retention rate",
+    spendRange:[2500,4500], freqRange:[6,12], recencyRange:[5,20]
+  },
+  {
+    id:2, name:"Potentials",  icon:"🌱", color:"var(--s3)", bg:"var(--s3bg)", border:"rgba(255,181,71,0.25)",
+    count:115, desc:"Growing engagement, low-mid spend",
+    rfm:{ r:6.0, f:5.5, m:5.8 },
+    strategy:"Onboarding email series + first-purchase discount. Nudge with flash sales.",
+    roi:"Expected ROI: +15% conversion uplift",
+    spendRange:[1200,3000], freqRange:[3,8], recencyRange:[10,30]
+  },
+  {
+    id:3, name:"At Risk",     icon:"⚠️", color:"var(--s4)", bg:"var(--s4bg)", border:"rgba(255,107,157,0.25)",
+    count:98, desc:"Previously active, now dropping off",
+    rfm:{ r:3.2, f:4.0, m:5.5 },
+    strategy:"Win-back campaign: 'We miss you' + 20% off coupon. Survey to understand churn reason.",
+    roi:"Expected ROI: Recover ₹4.2L/quarter",
+    spendRange:[1500,3500], freqRange:[2,6], recencyRange:[30,60]
+  },
+  {
+    id:4, name:"Hibernating", icon:"😴", color:"var(--s5)", bg:"var(--s5bg)", border:"rgba(167,139,250,0.25)",
+    count:57, desc:"Long inactive, low engagement",
+    rfm:{ r:1.5, f:2.0, m:2.8 },
+    strategy:"Re-engagement push notification + major discount. If no response, move to cold list.",
+    roi:"Expected ROI: +8% reactivation",
+    spendRange:[300,1500], freqRange:[1,4], recencyRange:[60,120]
+  },
+];
+
+// ── GENERATE CUSTOMERS ────────────────────────────────
+const NAMES = ["Aarav Shah","Priya Reddy","Rahul Verma","Sneha Patel","Kiran Nair","Divya Iyer","Arjun Singh","Meera Joshi","Rohan Das","Ananya Rao","Vijay Kumar","Lakshmi Pillai","Aditya Mehta","Pooja Sharma","Suresh Babu","Nisha Gupta","Ravi Teja","Kavitha Raman","Sanjay Bhatt","Deepa Nayak"];
+const CITIES = ["Hyderabad","Bangalore","Mumbai","Chennai","Pune","Delhi","Kolkata","Ahmedabad"];
+
+function rand(min, max) { return Math.round(Math.random() * (max - min) + min); }
+function randF(min, max) { return +(Math.random() * (max - min) + min).toFixed(1); }
+
+let customers = [];
+SEGMENTS.forEach(seg => {
+  for (let i = 0; i < seg.count; i++) {
+    customers.push({
+      name: NAMES[rand(0, NAMES.length-1)] + (i%3===0?' '+String.fromCharCode(65+rand(0,5)):' '+rand(1,99)),
+      segment: seg.id,
+      spend: rand(...seg.spendRange),
+      freq: rand(...seg.freqRange),
+      recency: rand(...seg.recencyRange),
+      city: CITIES[rand(0, CITIES.length-1)],
+      score: +(((seg.rfm.r + seg.rfm.f + seg.rfm.m) / 3).toFixed(1))
+    });
+  }
+});
+
+let activeFilter = 'all';
+
+// ── RENDER TABS ───────────────────────────────────────
+function renderTabs() {
+  document.getElementById('segTabs').innerHTML =
+    `<div class="seg-tab ${activeFilter==='all'?'active':''}" onclick="setFilter('all')" style="${activeFilter==='all'?'border-color:var(--s1);color:var(--text)':''}">
+      <span class="dot" style="background:var(--s1)"></span> All Customers <span class="count">(500)</span>
+    </div>` +
+    SEGMENTS.map(s => `
+      <div class="seg-tab ${activeFilter===s.id?'active':''}" onclick="setFilter(${s.id})"
+        style="${activeFilter===s.id?`border-color:${s.color};color:var(--text)`:''}">
+        <span class="dot" style="background:${s.color}"></span>
+        ${s.name} <span class="count">(${s.count})</span>
+      </div>`).join('');
+}
+
+function setFilter(id) { activeFilter = id; renderAll(); }
+
+// ── RENDER KPIs ───────────────────────────────────────
+function renderKPIs() {
+  const seg = activeFilter === 'all' ? null : SEGMENTS[activeFilter];
+  const filtered = activeFilter === 'all' ? customers : customers.filter(c => c.segment === activeFilter);
+  const avgSpend = Math.round(filtered.reduce((s,c)=>s+c.spend,0)/filtered.length);
+  const avgFreq  = (filtered.reduce((s,c)=>s+c.freq,0)/filtered.length).toFixed(1);
+  const avgRec   = Math.round(filtered.reduce((s,c)=>s+c.recency,0)/filtered.length);
+  const totalRev = filtered.reduce((s,c)=>s+c.spend,0);
+
+  const kpis = [
+    { icon:"👥", label:"Customers",     val: filtered.length, change:"+12%", up:true },
+    { icon:"💰", label:"Avg Spend/mo",  val:"₹"+avgSpend.toLocaleString(), change:"+8%", up:true },
+    { icon:"🔁", label:"Avg Orders/mo", val: avgFreq, change:"+5%", up:true },
+    { icon:"📅", label:"Avg Recency",   val: avgRec+"d", change: avgRec>30?"+high":"-low", up: avgRec<20 },
+    { icon:"💵", label:"Total Revenue", val:"₹"+(totalRev/100000).toFixed(1)+"L", change:"+18%", up:true },
+  ];
+  document.getElementById('kpiRow').innerHTML = kpis.map((k,i)=>`
+    <div class="kpi" style="animation-delay:${i*0.05}s">
+      <div class="kpi-top">
+        <span class="kpi-icon">${k.icon}</span>
+        <span class="kpi-change ${k.up?'up':'down'}">${k.change}</span>
+      </div>
+      <div class="kpi-val">${k.val}</div>
+      <div class="kpi-label">${k.label}</div>
+    </div>`).join('');
+}
+
+// ── SCATTER PLOT ──────────────────────────────────────
+function renderScatter() {
+  const canvas = document.getElementById('scatterCanvas');
+  const dpr = window.devicePixelRatio || 1;
+  const W = canvas.offsetWidth;
+  const H = 260;
+  canvas.width  = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.height = H + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  const pad = { l:40, r:20, t:20, b:36 };
+  const pw = W - pad.l - pad.r;
+  const ph = H - pad.t - pad.b;
+
+  // Grid
+  ctx.strokeStyle = '#1e2130';
+  ctx.lineWidth = 1;
+  for (let i=0;i<=4;i++) {
+    const y = pad.t + (ph/4)*i;
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(pad.l+pw, y); ctx.stroke();
+  }
+  for (let i=0;i<=4;i++) {
+    const x = pad.l + (pw/4)*i;
+    ctx.beginPath(); ctx.moveTo(x, pad.t); ctx.lineTo(x, pad.t+ph); ctx.stroke();
+  }
+
+  // Axis labels
+  ctx.fillStyle = '#6b6f85'; ctx.font = '9px Epilogue'; ctx.textAlign = 'center';
+  ['0','2K','4K','6K','8K'].forEach((l,i)=>{
+    ctx.fillText('₹'+l, pad.l + (pw/4)*i, H-8);
+  });
+  ctx.textAlign = 'right';
+  ['0','5','10','15','20'].forEach((l,i)=>{
+    ctx.fillText(l, pad.l-6, pad.t + ph - (ph/4)*i + 3);
+  });
+
+  // Axis titles
+  ctx.fillStyle = '#6b6f85'; ctx.font = '10px Epilogue'; ctx.textAlign = 'center';
+  ctx.fillText('Monthly Spend (₹)', pad.l + pw/2, H-1);
+
+  // Points
+  const SEG_COLORS_HEX = ['#00d4aa','#6c8fff','#ffb547','#ff6b9d','#a78bfa'];
+  window._scatterPoints = [];
+
+  customers.forEach(c => {
+    const isFiltered = activeFilter !== 'all' && c.segment !== activeFilter;
+    const x = pad.l + (c.spend / 8000) * pw;
+    const y = pad.t + ph - (c.freq / 20) * ph;
+    const r = 3.5;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI*2);
+    ctx.fillStyle = isFiltered
+      ? 'rgba(255,255,255,0.04)'
+      : SEG_COLORS_HEX[c.segment] + (activeFilter==='all'?'cc':'ff');
+    ctx.fill();
+    window._scatterPoints.push({ x, y, r, c });
+  });
+
+  // Legend
+  document.getElementById('scatterLegend').innerHTML = SEGMENTS.map(s=>`
+    <div class="scatter-leg-item">
+      <div class="scatter-leg-dot" style="background:${s.color}"></div>
+      ${s.name}
+    </div>`).join('');
+}
+
+// Scatter tooltip
+document.getElementById('scatterCanvas').addEventListener('mousemove', e => {
+  const rect = e.target.getBoundingClientRect();
+  const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+  const tt = document.getElementById('tooltip');
+  let found = null;
+  if (window._scatterPoints) {
+    for (const p of window._scatterPoints) {
+      const dx = p.x - mx, dy = p.y - my;
+      if (Math.sqrt(dx*dx+dy*dy) < 8) { found = p.c; break; }
+    }
+  }
+  if (found) {
+    document.getElementById('ttName').textContent  = found.name;
+    document.getElementById('ttSpend').textContent = '₹' + found.spend.toLocaleString();
+    document.getElementById('ttFreq').textContent  = found.freq + ' orders/mo';
+    document.getElementById('ttSeg').textContent   = SEGMENTS[found.segment].name;
+    tt.style.display = 'block';
+    tt.style.left = (e.clientX + 14) + 'px';
+    tt.style.top  = (e.clientY - 20) + 'px';
+  } else {
+    tt.style.display = 'none';
+  }
+});
+document.getElementById('scatterCanvas').addEventListener('mouseleave', () => {
+  document.getElementById('tooltip').style.display = 'none';
+});
+
+// ── SEGMENT CARDS ─────────────────────────────────────
+function renderSegCards() {
+  document.getElementById('segCards').innerHTML = SEGMENTS.map(s=>`
+    <div class="seg-card" style="background:${s.bg};border-color:${s.border}" onclick="setFilter(${s.id})">
+      <div class="seg-card-icon" style="background:${s.border}">${s.icon}</div>
+      <div>
+        <div class="seg-card-name" style="color:${s.color}">${s.name}</div>
+        <div class="seg-card-desc">${s.desc}</div>
+      </div>
+      <div class="seg-card-right">
+        <div class="seg-card-count" style="color:${s.color}">${s.count}</div>
+        <div class="seg-card-pct">${Math.round(s.count/5)}%</div>
+      </div>
+    </div>`).join('');
+}
+
+// ── RFM BARS ──────────────────────────────────────────
+function renderRFM() {
+  const segs = activeFilter === 'all' ? SEGMENTS : [SEGMENTS[activeFilter]];
+  document.getElementById('rfmWrap').innerHTML = segs.map(s=>`
+    <div style="margin-bottom:${segs.length>1?'14':'0'}px">
+      ${segs.length>1?`<div style="font-family:'Syne',sans-serif;font-size:11px;color:${s.color};margin-bottom:8px">${s.icon} ${s.name}</div>`:''}
+      ${['Recency','Frequency','Monetary'].map((label,i)=>{
+        const val = [s.rfm.r, s.rfm.f, s.rfm.m][i];
+        const colors = ['var(--s2)','var(--s3)','var(--s1)'];
+        return `<div class="rfm-row">
+          <div class="rfm-label"><span class="rfm-name">${label} Score</span><span class="rfm-val">${val}/10</span></div>
+          <div class="rfm-track"><div class="rfm-fill" style="width:${val*10}%;background:${colors[i]}"></div></div>
+        </div>`;
+      }).join('')}
+    </div>`).join('');
+}
+
+// ── STRATEGIES ────────────────────────────────────────
+function renderStrategies() {
+  const segs = activeFilter === 'all' ? SEGMENTS : [SEGMENTS[activeFilter]];
+  document.getElementById('stratList').innerHTML = segs.map(s=>`
+    <div class="strat-item" style="background:${s.bg};border-left-color:${s.color}">
+      <div class="strat-header">
+        <span class="strat-seg" style="background:${s.border};color:${s.color}">${s.icon} ${s.name}</span>
+      </div>
+      <div class="strat-title">${s.strategy.split('+')[0].trim()}</div>
+      <div class="strat-desc">${s.strategy}</div>
+      <div class="strat-roi" style="color:${s.color}">${s.roi}</div>
+    </div>`).join('');
+}
+
+// ── CUSTOMER TABLE ────────────────────────────────────
+function renderTable() {
+  const filtered = (activeFilter === 'all' ? customers : customers.filter(c=>c.segment===activeFilter)).slice(0,12);
+  const SEG_COLORS_HEX = ['#00d4aa','#6c8fff','#ffb547','#ff6b9d','#a78bfa'];
+  const SEG_BG = ['var(--s1bg)','var(--s2bg)','var(--s3bg)','var(--s4bg)','var(--s5bg)'];
+  document.getElementById('custTable').innerHTML =
+    `<tr><th>Customer</th><th>City</th><th>Segment</th><th>Monthly Spend</th><th>Orders/mo</th><th>Last Active</th><th>Score</th></tr>` +
+    filtered.map(c=>{
+      const seg = SEGMENTS[c.segment];
+      const dots = Array.from({length:10},(_,i)=>`<div class="score-dot ${i<Math.round(c.score)?'filled':''}"></div>`).join('');
+      return `<tr>
+        <td style="font-weight:500">${c.name}</td>
+        <td style="color:var(--muted)">${c.city}</td>
+        <td><span class="seg-pill" style="background:${SEG_BG[c.segment]};color:${seg.color}">${seg.icon} ${seg.name}</span></td>
+        <td style="font-weight:600">₹${c.spend.toLocaleString()}</td>
+        <td>${c.freq}x</td>
+        <td style="color:var(--muted)">${c.recency}d ago</td>
+        <td><div class="score-bar">${dots}</div></td>
+      </tr>`;
+    }).join('');
+}
+
+// ── CLASSIFY NEW CUSTOMER ─────────────────────────────
+function classify(spend, freq, recency) {
+  // Simple rule-based K-Means simulation
+  if (spend >= 4000 && freq >= 10 && recency <= 7)  return 0; // Champions
+  if (spend >= 2500 && freq >= 6  && recency <= 20) return 1; // Loyalists
+  if (spend >= 1200 && freq >= 3  && recency <= 30) return 2; // Potentials
+  if (spend >= 1000 && recency > 30 && recency<=60) return 3; // At Risk
+  return 4; // Hibernating
+}
+
+function addCustomer() {
+  const name    = document.getElementById('cName').value.trim();
+  const spend   = parseInt(document.getElementById('cSpend').value)||0;
+  const freq    = parseInt(document.getElementById('cFreq').value)||0;
+  const recency = parseInt(document.getElementById('cRecency').value)||0;
+  if (!name || !spend || !freq || !recency) { alert('Please fill all fields'); return; }
+
+  const segId = classify(spend, freq, recency);
+  const seg   = SEGMENTS[segId];
+
+  customers.push({ name, segment:segId, spend, freq, recency, city:'New Entry', score:+((seg.rfm.r+seg.rfm.f+seg.rfm.m)/3).toFixed(1) });
+  seg.count += 1;
+
+  const result = document.getElementById('classifyResult');
+  result.style.display = 'block';
+  result.innerHTML = `
+    <div style="background:${seg.bg};border:1px solid ${seg.border};border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px">
+      <span style="font-size:24px">${seg.icon}</span>
+      <div>
+        <div style="font-family:'Syne',sans-serif;font-weight:700;color:${seg.color};font-size:14px">
+          ${name} → classified as <strong>${seg.name}</strong>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:3px">${seg.strategy}</div>
+      </div>
+    </div>`;
+
+  document.getElementById('cName').value = '';
+  document.getElementById('cSpend').value = '';
+  document.getElementById('cFreq').value = '';
+  document.getElementById('cRecency').value = '';
+
+  renderAll();
+}
+
+// ── RENDER ALL ────────────────────────────────────────
+function renderAll() {
+  renderTabs();
+  renderKPIs();
+  renderScatter();
+  renderSegCards();
+  renderRFM();
+  renderStrategies();
+  renderTable();
+}
+
+window.addEventListener('resize', () => renderScatter());
+renderAll();
+</script>
+</body>
+</html>
