@@ -77,7 +77,7 @@ customer-segmentation/
 
 **Rowthu Kavyanjali Priya**  
 B.Tech CSE (Data Science) — Pragati Engineering College  
-[LinkedIn](#) · [GitHub](#)
+
 
 ---
 
